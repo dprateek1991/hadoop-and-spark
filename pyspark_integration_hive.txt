@@ -1,0 +1,64 @@
+-- Write a PYSPARK code to access HIVE table prateek
+
+[cloudera@quickstart ~]$ cat prateek_pyspark.py
+from pyspark import SparkConf,SparkContext
+from pyspark.sql import SQLContext,HiveContext
+from pyspark.sql.types import *
+
+def main(sc, SQLContext):
+
+	SQLContext=HiveContext(sc)
+	sc.setLogLevel("ERROR")
+	query1="use bigdata"
+	df1=SQLContext.sql(query1)
+	query2="select * from prateek"
+	df2=SQLContext.sql(query2)
+	df2.show()
+
+if __name__ == "__main__":
+    conf = SparkConf().setMaster("yarn-client")
+    conf = conf.setAppName("prateek PySpark Demo")
+    sc   = SparkContext(conf=conf)
+
+main(sc, SQLContext)
+[cloudera@quickstart ~]$ 
+
+
+-- Submit above PYSPARK code 
+
+spark-submit prateek_pyspark.py
+
+
+-- View the results in PYSPARK shell using Spark Dataframe
+
+[cloudera@quickstart ~]$ pyspark
+Python 2.6.6 (r266:84292, Jul 23 2015, 15:22:56) 
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /__ / .__/\_,_/_/ /_/\_\   version 1.6.0
+      /_/
+
+Using Python version 2.6.6 (r266:84292, Jul 23 2015 15:22:56)
+SparkContext available as sc, HiveContext available as sqlContext.
+>>> from pyspark import SparkConf,SparkContext
+>>> from pyspark.sql import SQLContext,HiveContext
+>>> from pyspark.sql.types import *
+>>> 
+>>> SQLContext=HiveContext(sc)
+>>> sc.setLogLevel("ERROR")
+>>> query1="use bigdata"
+>>> df1=SQLContext.sql(query1)
+>>> query2="select * from prateek"
+>>> df2=SQLContext.sql(query2)
+>>> df2.show()
++-----+-------+------+----------+
+|  tid| f_name|l_name|trainer_id|
++-----+-------+------+----------+
+|tid01|Prateek| Dubey|       P01|
+|tid02|  Abhay| Kumar|       P02|
+|tid03|   Teja| Kumar|       P03|
++-----+-------+------+----------+
+
+>>> 
