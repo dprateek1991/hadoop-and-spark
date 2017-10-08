@@ -1,3 +1,5 @@
+-- Create a table in HBASE 
+
 [cloudera@quickstart ~]$ hbase shell
 2017-10-08 08:35:50,917 INFO  [main] Configuration.deprecation: hadoop.native.lib is deprecated. Instead, use io.native.lib.available
 HBase Shell; enter 'help<RETURN>' for list of supported commands.
