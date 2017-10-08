@@ -1,0 +1,31 @@
+-- Create a table in HIVE mapped to HBASE table prateek
+
+[cloudera@quickstart ~]$ hive
+2017-10-08 08:54:41,475 WARN  [main] mapreduce.TableMapReduceUtil: The hbase-prefix-tree module jar containing PrefixTreeCodec is not present.  Continuing without it.
+
+Logging initialized using configuration in file:/etc/hive/conf.dist/hive-log4j.properties
+WARNING: Hive CLI is deprecated and migration to Beeline is recommended.
+hive> use bigdata;
+OK
+Time taken: 0.334 seconds
+hive> create external table prateek
+    > (tid String, 
+    > f_name string, 
+    > l_name string, 
+    > trainer_id string)
+    > STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+    > with serdeproperties ("hbase.columns.mapping"=":key,trainername:fname,trainername:Lname,trainerid:id")
+    > tblproperties("hbase.table.name"="prateek");
+OK
+Time taken: 2.271 seconds
+
+
+-- View data in HIVE table prateek which is mapped to HBASE table prateek
+
+hive> select * from prateek;
+OK
+tid01	Prateek	Dubey	P01
+tid02	Abhay	Kumar	P02
+tid03	Teja	Kumar	P03
+Time taken: 0.708 seconds, Fetched: 3 row(s)
+hive> 
