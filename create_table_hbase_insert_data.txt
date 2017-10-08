@@ -1,0 +1,61 @@
+[cloudera@quickstart ~]$ hbase shell
+2017-10-08 08:35:50,917 INFO  [main] Configuration.deprecation: hadoop.native.lib is deprecated. Instead, use io.native.lib.available
+HBase Shell; enter 'help<RETURN>' for list of supported commands.
+Type "exit<RETURN>" to leave the HBase Shell
+Version 1.2.0-cdh5.8.0, rUnknown, Thu Jun 16 12:46:57 PDT 2016
+
+hbase(main):001:0> create 'prateek','trainername','trainerid'
+0 row(s) in 1.5590 seconds
+
+=> Hbase::Table - prateek
+hbase(main):002:0> 
+
+
+-- Insert data in HBASE table prateek
+
+hbase(main):002:0> put 'prateek','tid01','trainername:fname','Prateek'
+0 row(s) in 0.5670 seconds
+
+hbase(main):003:0> put 'prateek','tid01','trainername:Lname','Dubey'
+0 row(s) in 0.0100 seconds
+
+hbase(main):004:0> put 'prateek','tid01','trainerid:id','P01'
+0 row(s) in 0.0260 seconds
+
+hbase(main):005:0> put 'prateek','tid02','trainername:fname','Abhay'
+0 row(s) in 0.0080 seconds
+
+hbase(main):006:0> put 'prateek','tid02','trainername:Lname','Kumar'
+0 row(s) in 0.0120 seconds
+
+hbase(main):007:0> put 'prateek','tid02','trainerid:id','P02'
+0 row(s) in 0.0100 seconds
+
+hbase(main):008:0> put 'prateek','tid03','trainername:fname','Teja'
+0 row(s) in 0.0110 seconds
+
+hbase(main):009:0> put 'prateek','tid03','trainername:Lname','Kumar'
+0 row(s) in 0.0090 seconds
+
+hbase(main):010:0> put 'prateek','tid03','trainerid:id','P03'
+0 row(s) in 0.0100 seconds
+
+hbase(main):011:0> 
+
+
+-- View data in HBASE table prateek
+
+hbase(main):011:0> scan 'prateek'
+ROW                                                          COLUMN+CELL                                                                                                                                                                     
+ tid01                                                       column=trainerid:id, timestamp=1507477364591, value=P01                                                                                                                         
+ tid01                                                       column=trainername:Lname, timestamp=1507477364552, value=Dubey                                                                                                                  
+ tid01                                                       column=trainername:fname, timestamp=1507477364457, value=Prateek                                                                                                                
+ tid02                                                       column=trainerid:id, timestamp=1507477364828, value=P02                                                                                                                         
+ tid02                                                       column=trainername:Lname, timestamp=1507477364772, value=Kumar                                                                                                                  
+ tid02                                                       column=trainername:fname, timestamp=1507477364687, value=Abhay                                                                                                                  
+ tid03                                                       column=trainerid:id, timestamp=1507477366857, value=P03                                                                                                                         
+ tid03                                                       column=trainername:Lname, timestamp=1507477364892, value=Kumar                                                                                                                  
+ tid03                                                       column=trainername:fname, timestamp=1507477364859, value=Teja                                                                                                                   
+3 row(s) in 0.1990 seconds
+
+hbase(main):012:0> 
