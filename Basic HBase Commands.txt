@@ -1,0 +1,453 @@
+- CRUD (Create, Read, Update and Delete) Operations in HBase
+
+[cloudera@quickstart ~]$ hbase shell
+
+To view tables
+
+hbase(main):002:0> list
+
+Create table
+
+create ‘<table name>’,’<column family>’ 
+hbase(main):015:0> create 'emp', 'personal_data', 'professional_data'
+hbase(main):016:0> list
+
+Insert data in table
+
+put ’<table name>’,’row1’,’<colfamily:colname>’,’<value>’
+
+hbase(main):005:0> put 'emp','1','personal_data:name','raju'
+hbase(main):006:0> put 'emp','1','personal_data:city','hyderabad'
+hbase(main):007:0> put 'emp','1','professional_data:designation','manager'
+hbase(main):007:0> put 'emp','1','professional_data:salary','50000'
+
+To view data in table
+
+hbase(main):022:0> scan 'emp'
+
+To disable a table
+
+hbase(main):025:0> disable 'emp'
+
+To check whether table is disabled
+
+hbase(main):031:0> is_disabled 'emp'
+
+To disable multiple tables
+
+hbase(main):002:07> disable_all 'raj.*'
+
+To enable a table
+
+hbase(main):005:0> enable 'emp'
+
+To check whether table is enabled
+
+hbase(main):031:0> is_enabled 'emp'
+
+Describing a table
+
+hbase(main):006:0> describe 'emp'
+
+Alter a table
+
+Alter is the command used to make changes to an existing table. Using this command, you can change the maximum number of cells of a column family, 
+set and delete table scope operators, and delete a column family from a table.
+
+hbase(main):003:0> alter 'emp', NAME => 'personal_data', VERSIONS => 5
+
+Deleting a column family
+
+hbase> alter ‘ table name ’, ‘delete’ => ‘ column family ’ 
+
+hbase(main):007:0> alter 'employee','delete'=>'professional_data'
+
+hbase(main):006:0> scan 'employee'
+
+To check existance of table
+
+hbase(main):024:0> exists 'emp'
+
+Dropping a table
+
+hbase(main):018:0> disable 'emp'
+0 row(s) in 1.4580 seconds
+
+hbase(main):019:0> drop 'emp'
+0 row(s) in 0.3060 seconds
+
+Dropping all tables with matched case
+
+hbase(main):002:0> disable_all 'raj.*'
+
+hbase(main):018:0> drop_all 'raj.*'
+
+Stopping HBase
+
+hbase(main):021:0> exit
+
+
+Inserting data in HBase table
+
+hbase(main):005:0> put 'emp','1','personal_data:name','raju'
+hbase(main):006:0> put 'emp','1','personal_data:city','hyderabad'
+hbase(main):007:0> put 'emp','1','professional_datadata:designation','manager'
+hbase(main):007:0> put 'emp','1','professional_data:salary','50000'
+
+hbase(main):022:0> scan 'emp'
+
+
+Updating data in HBase table
+
+hbase(main):002:0> put 'emp','row1','personal_data:city','Delhi'
+
+hbase(main):003:0> scan 'emp'
+
+
+Reading data from HBase table
+
+hbase(main):012:0> get 'emp', '1'
+
+Reading a specific column from HBase table
+
+hbase> get 'table name', ‘rowid’, {COLUMN => ‘column family:column name ’}
+
+
+hbase(main):015:0> get 'emp', 'row1', {COLUMN => 'personal:name'}
+  COLUMN                CELL  
+personal:name timestamp = 1418035791555, value = raju
+1 row(s) in 0.0080 seconds
+
+
+Deleting data from HBase table
+
+hbase(main):006:0> delete 'emp', '1', 'personal data:city',
+
+Deleting all cells from a table
+
+hbase(main):007:0> deleteall 'emp','1'
+
+hbase(main):022:0> scan 'emp'
+
+
+Counting the number of records 
+
+hbase(main):023:0> count 'emp'
+
+Truncate a table
+
+hbase(main):011:0> truncate 'emp'
+
+
+=============
+=============
+
+Hive Integration with HBase (https://cwiki.apache.org/confluence/display/Hive/HBaseIntegration)
+
+For integrating HBase with Hive, Storage Handlers in Hive is used.
+
+Storage Handlers are a combination of InputFormat, OutputFormat, SerDe, and specific code that Hive uses to identify 
+an external entity as a Hive table. This allows the user to issue SQL queries seamlessly, whether the table represents 
+a text file stored in Hadoop or a column family stored in a NoSQL database such as Apache HBase, Apache Cassandra, and Amazon DynamoDB. 
+
+create 'employee','personaldetails','deptdetails'
+
+put 'employee','eid01','personaldetails:fname','Brundesh'
+put 'employee','eid01','personaldetails:Lname','R'
+put 'employee','eid01','personaldetails:salary','10000'
+put 'employee','eid01','deptdetails:name','R&D'
+put 'employee','eid01','deptdetails:location','Banglore'
+put 'employee','eid02','personaldetails:fname','Abhay'
+put 'employee','eid02','personaldetails:Lname','Kumar'
+put 'employee','eid02','personaldetails:salary','100000'
+put 'employee','eid03','personaldetails:fname','Teja'
+put 'employee','eid03','personaldetails:Lname','M'
+put 'employee','eid03','personaldetails:salary','100000'
+
+create external table employee_hbase
+(Eid String, 
+f_name string, 
+l_name string, 
+salary int)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+with serdeproperties ("hbase.columns.mapping"=":key,personaldetails:fname,personaldetails:Lname,personaldetails:salary")
+tblproperties("hbase.table.name"="employee");
+
+select * from employee_hbase;
+
+NOTE:
+
+Inserting large amounts of data may be slow due to WAL overhead
+
+set hive.hbase.wal.enabled=false;
+
+Warning: disabling WAL may lead to data loss if an HBase failure occurs, so only use this if you have some other recovery strategy available.
+
+
+=============
+=============
+
+
+Load data into HBase from HDFS (https://blog.cloudera.com/blog/2013/09/how-to-use-hbase-bulk-loading-and-why/)
+
+sample.txt
+
+1,tom
+2,sam
+3,jerry
+4,marry
+5,john
+
+hdfs dfs -put sample.txt /user/cloudera/
+
+Create a table in HBASE as -- create 'sample','cf'
+
+hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator=, -Dimporttsv.columns=HBASE_ROW_KEY,cf sample /user/cloudera/sample.txt
+
+
+
+
+How data looks in HDFS for HBASE
+
+[cloudera@quickstart ~]$ hdfs dfs -ls /hbase/
+Found 9 items
+drwxr-xr-x   - hbase supergroup          0 2017-05-20 01:42 /hbase/.tmp
+drwxr-xr-x   - hbase supergroup          0 2017-05-20 01:43 /hbase/MasterProcWALs
+drwxr-xr-x   - hbase supergroup          0 2017-05-20 01:42 /hbase/WALs
+drwxr-xr-x   - hbase supergroup          0 2017-05-20 01:54 /hbase/archive
+drwxr-xr-x   - hbase supergroup          0 2017-02-21 10:43 /hbase/corrupt
+drwxr-xr-x   - hbase supergroup          0 2017-01-05 08:26 /hbase/data
+-rw-r--r--   1 hbase supergroup         42 2017-01-05 08:25 /hbase/hbase.id
+-rw-r--r--   1 hbase supergroup          7 2017-01-05 08:25 /hbase/hbase.version
+drwxr-xr-x   - hbase supergroup          0 2017-05-20 01:53 /hbase/oldWALs
+
+
+
+[cloudera@quickstart ~]$ hdfs dfs -ls /hbase/data/default
+Found 2 items
+drwxr-xr-x   - hbase supergroup          0 2017-05-19 20:52 /hbase/data/default/emp
+drwxr-xr-x   - hbase supergroup          0 2017-03-25 10:01 /hbase/data/default/sample
+
+
+
+[cloudera@quickstart ~]$ hdfs dfs -ls /hbase/data/default/emp/a728a010877ccece9d5979c5722ba39a
+Found 4 items
+-rw-r--r--   1 hbase supergroup         38 2017-05-19 20:52 /hbase/data/default/emp/a728a010877ccece9d5979c5722ba39a/.regioninfo
+drwxr-xr-x   - hbase supergroup          0 2017-05-19 21:11 /hbase/data/default/emp/a728a010877ccece9d5979c5722ba39a/personal_data
+drwxr-xr-x   - hbase supergroup          0 2017-05-19 21:11 /hbase/data/default/emp/a728a010877ccece9d5979c5722ba39a/professional_data
+drwxr-xr-x   - hbase supergroup          0 2017-05-20 01:42 /hbase/data/default/emp/a728a010877ccece9d5979c5722ba39a/recovered.edits
+
+
+
+============
+============
+
+- Loading data using a Pig Latin script
+
+customer.txt
+Custno, firstname, lastname, age, profession
+4000001,Kristina,Chung,55,Pilot
+4000002,Paige,Chen,74,Teacher
+4000003,Sherri,Melton,34,Firefighter
+4000004,Gretchen,Hill,66,Computer hardware engineer
+4000005,Karen,Puckett,74,Lawyer
+4000006,Patrick,Song,42,Veterinarian
+4000007,Elsie,Hamilton,43,Pilot
+4000008,Hazel,Bender,63,Carpenter
+4000009,Malcolm,Wagner,39,Artist
+4000010,Dolores,McLaughlin,60,Writer
+4000011,Francis,McNamara,47,Therapist
+4000012,Sandy,Raynor,26,Writer
+4000013,Marion,Moon,41,Carpenter
+4000014,Beth,Woodard,65,
+4000015,Julia,Desai,49,Musician
+4000016,Jerome,Wallace,52,Pharmacist
+4000017,Neal,Lawrence,72,Computer support specialist
+4000018,Jean,Griffin,45,Childcare worker
+4000019,Kristine,Dougherty,63,Financial analyst
+
+hdfs dfs -mkdir /user/cloudera/customers/
+hdfs dfs -put customer.txt /user/cloudera/customers/
+
+
+- Create a table in HBASE 
+
+base(main):001:0> create 'customers', 'customers_data'
+
+
+- Create a Pig Latin script to load data
+
+raw_data = LOAD '/user/cloudera/customers/' USING PigStorage(',') AS (
+           custno:chararray,
+           firstname:chararray,
+           lastname:chararray,
+           age:int,
+           profession:chararray
+);
+
+
+-- Use HBase storage handler to map data from PIG to HBase
+--NOTE: In this case, custno (first unique column) will be considered as row key.
+
+STORE raw_data INTO 'hbase://customers' USING org.apache.pig.backend.hadoop.hbase.HBaseStorage(
+'customers_data:firstname 
+ customers_data:lastname 
+ customers_data:age 
+ customers_data:profession'
+);
+
+
+===============
+===============
+
+- Create a table in HBase and load data into items
+
+create 'hivehbase', 'ratings'
+put 'hivehbase', 'row1', 'ratings:userid', 'user1'
+put 'hivehbase', 'row1', 'ratings:bookid', 'book1'
+put 'hivehbase', 'row1', 'ratings:rating', '1'
+ 
+put 'hivehbase', 'row2', 'ratings:userid', 'user2'
+put 'hivehbase', 'row2', 'ratings:bookid', 'book1'
+put 'hivehbase', 'row2', 'ratings:rating', '3'
+ 
+put 'hivehbase', 'row3', 'ratings:userid', 'user2'
+put 'hivehbase', 'row3', 'ratings:bookid', 'book2'
+put 'hivehbase', 'row3', 'ratings:rating', '3'
+ 
+put 'hivehbase', 'row4', 'ratings:userid', 'user2'
+put 'hivehbase', 'row4', 'ratings:bookid', 'book4'
+put 'hivehbase', 'row4', 'ratings:rating', '1'
+
+
+- Create a table in Hive and map it to HBase table
+
+CREATE EXTERNAL TABLE hbasehive_table
+(key string, userid string,bookid string,rating int) 
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES 
+("hbase.columns.mapping" = ":key,ratings:userid,ratings:bookid,ratings:rating")
+TBLPROPERTIES ("hbase.table.name" = "hivehbase");
+
+
+- Query the results
+
+select * from hbasehive_table;     
+OK
+row1    user1   book1   1
+row2    user2   book1   3
+row3    user2   book2   3
+row4    user2   book4   1
+Time taken: 0.254 seconds, Fetched: 4 row(s)
+
+
+================
+================
+
+- Pull data
+
+mkdir pagecounts ; cd pagecounts
+for x in {0..9} ; do wget "http://dumps.wikimedia.org/other/pagecounts-raw/2008/2008-10/pagecounts-20081001-0${x}0000.gz" ; done
+hadoop fs -copyFromLocal $(pwd) ./
+
+- View data
+
+zcat pagecounts-20081001-000000.gz | head -n5
+aa.b Special:Statistics 1 837
+aa Main_Page 4 41431
+aa Special:ListUsers 1 5555
+aa Special:Listusers 1 1052
+aa Special:PrefixIndex/Comparison_of_Guaze%27s_Law_and_Coulomb%27s_Law 1 4332
+
+- Load data in Hive
+
+cat 00_pagecounts.ddl
+
+CREATE TABLE IF NOT EXISTS pagecounts (projectcode STRING, pagename STRING, pageviews STRING, bytes STRING)
+ROW FORMAT
+  DELIMITED FIELDS TERMINATED BY ' '
+  LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/user/ndimiduk/pagecounts';
+
+- Run the script
+
+hive -f 00_pagecounts.ddl
+
+- View data in Hive
+
+hive -e "SELECT count(*) FROM pagecounts;"
+
+zcat * | wc -l
+
+
+- Transform the schema for HBase
+
+The next step is to transform the raw data into a schema that makes sense for HBase. 
+In our case, we’ll create a schema that allows us to calculate aggregate summaries of pages according to their titles. 
+To do this, we want all the data for a single page grouped together. We’ll manage that by creating a Hive view that represents our target HBase schema. 
+
+
+cat 01_pgc.ddl
+-- create a view, building a custom hbase rowkey
+CREATE VIEW IF NOT EXISTS pgc (rowkey, pageviews, bytes) AS
+SELECT concat_ws('/', projectcode, concat_ws('/', pagename, regexp_extract(INPUT__FILE__NAME, 'pagecounts-(\\d{8}-\\d{6})\\..*$', 1))),
+       pageviews, 
+	   bytes
+FROM pagecounts;
+
+hive -f 01_pgc.ddl
+
+hive -e "SELECT * FROM pgc WHERE rowkey LIKE 'en/q%' LIMIT 10;"
+
+
+- Register the HBase table
+
+cat 02_pagecounts_hbase.ddl
+-- create a table in hbase to host the view
+CREATE TABLE IF NOT EXISTS pagecounts_hbase (rowkey STRING, pageviews STRING, bytes STRING)
+STORED BY 'org.apache.hadoop.hive.hbase.HBaseStorageHandler'
+WITH SERDEPROPERTIES ('hbase.columns.mapping' = ':key,f:c1,f:c2')
+TBLPROPERTIES ('hbase.table.name' = 'pagecounts');
+
+hive -f 02_pagecounts_hbase.ddl
+
+
+- Populate the HBase table
+
+cat 03_populate_hbase.hql
+
+-- populate our hbase table
+FROM pgc INSERT INTO TABLE pagecounts_hbase SELECT pgc.* WHERE rowkey LIKE 'en/q%' LIMIT 10;
+
+hive -f 03_populate_hbase.hql
+
+
+- Query data from HBase table
+
+echo "scan 'pagecounts'" | hbase shell
+
+- Verifying in Hive
+
+hive -e "SELECT * from pagecounts_hbase;"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

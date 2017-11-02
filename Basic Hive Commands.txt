@@ -1,0 +1,446 @@
+show schemas;
+use default;
+show tables;
+truncate table <table_name>; -- delete all the rows from the table
+drop table <table_name>; -- drop the table itself
+create database <database_name>;
+
+- To limit top 10 records only of a table
+
+select * from orders limit 10;
+
+Teradata
+
+select top10* from orders;
+
+DB2
+
+select * from orders fetch first 10 rows only;
+
+0: jdbc:hive2://quickstart:10000/default> explain select * from orders limit 10;
+INFO  : Compiling command(queryId=hive_20170301090000_d3511d61-2d89-4feb-a0a7-bf7375d955a8): explain select * from orders limit 10
+INFO  : Semantic Analysis Completed
+INFO  : Returning Hive schema: Schema(fieldSchemas:[FieldSchema(name:Explain, type:string, comment:null)], properties:null)
+INFO  : Completed compiling command(queryId=hive_20170301090000_d3511d61-2d89-4feb-a0a7-bf7375d955a8); Time taken: 0.206 seconds
+INFO  : Concurrency mode is disabled, not creating a lock manager
+INFO  : Executing command(queryId=hive_20170301090000_d3511d61-2d89-4feb-a0a7-bf7375d955a8): explain select * from orders limit 10
+INFO  : Starting task [Stage-1:EXPLAIN] in serial mode
+INFO  : Completed executing command(queryId=hive_20170301090000_d3511d61-2d89-4feb-a0a7-bf7375d955a8); Time taken: 0.04 seconds
+INFO  : OK
++---------------------------------------------------------------------------------------------------------------------------------------+--+
+|                                                                Explain                                                                |
++---------------------------------------------------------------------------------------------------------------------------------------+--+
+| STAGE DEPENDENCIES:                                                                                                                   |
+|   Stage-0 is a root stage                                                                                                             |
+|                                                                                                                                       |
+| STAGE PLANS:                                                                                                                          |
+|   Stage: Stage-0                                                                                                                      |
+|     Fetch Operator                                                                                                                    |
+|       limit: 10                                                                                                                       |
+|       Processor Tree:                                                                                                                 |
+|         TableScan                                                                                                                     |
+|           alias: orders                                                                                                               |
+|           Statistics: Num rows: 4215 Data size: 488963 Basic stats: COMPLETE Column stats: NONE                                       |
+|           Select Operator                                                                                                             |
+|             expressions: order_id (type: int), order_date (type: bigint), order_customer_id (type: int), order_status (type: string)  |
+|             outputColumnNames: _col0, _col1, _col2, _col3                                                                             |
+|             Statistics: Num rows: 4215 Data size: 488963 Basic stats: COMPLETE Column stats: NONE                                     |
+|             Limit                                                                                                                     |
+|               Number of rows: 10                                                                                                      |
+|               Statistics: Num rows: 10 Data size: 1160 Basic stats: COMPLETE Column stats: NONE                                       |
+|               ListSink                                                                                                                |
+|                                                                                                                                       |
++---------------------------------------------------------------------------------------------------------------------------------------+--+
+20 rows selected (0.575 seconds)
+0: jdbc:hive2://quickstart:10000/default> 
+
+- Running a hql file through Hive
+
+[cloudera@quickstart ~]$ hive -f teja.hql
+
+- Running an hql file through Beeline
+
+[cloudera@quickstart ~]$ beeline -u "jdbc:hive2://quickstart:10000/default" -n "admin" -p "" -f teja.hql
+
+- Running a SQL query without entering into Hive
+
+[cloudera@quickstart ~]$ hive -e "select * from default.orders limit 1"
+
+- Running a SQL query without entering into Impala shell
+
+[cloudera@quickstart ~]$ impala-shell -i localhost -d default -q "select * from orders limit 10" --quiet
+Starting Impala Shell without Kerberos authentication
++----------+---------------+-------------------+-----------------+
+| order_id | order_date    | order_customer_id | order_status    |
++----------+---------------+-------------------+-----------------+
+| 1        | 1374735600000 | 11599             | CLOSED          |
+| 2        | 1374735600000 | 256               | PENDING_PAYMENT |
+| 3        | 1374735600000 | 12111             | COMPLETE        |
+| 4        | 1374735600000 | 8827              | CLOSED          |
+| 5        | 1374735600000 | 11318             | COMPLETE        |
+| 6        | 1374735600000 | 7130              | COMPLETE        |
+| 7        | 1374735600000 | 4530              | COMPLETE        |
+| 8        | 1374735600000 | 2911              | PROCESSING      |
+| 9        | 1374735600000 | 5657              | PENDING_PAYMENT |
+| 10       | 1374735600000 | 5648              | PENDING_PAYMENT |
++----------+---------------+-------------------+-----------------+
+
+- Command to see the structure of a table in Hive
+
+0: jdbc:hive2://quickstart:10000/default> show create table driver;
+INFO  : Compiling command(queryId=hive_20170302085252_f22b25d3-c24c-4dc8-ac02-c652d898a325): show create table driver
+INFO  : Semantic Analysis Completed
+INFO  : Returning Hive schema: Schema(fieldSchemas:[FieldSchema(name:createtab_stmt, type:string, comment:from deserializer)], properties:null)
+INFO  : Completed compiling command(queryId=hive_20170302085252_f22b25d3-c24c-4dc8-ac02-c652d898a325); Time taken: 0.263 seconds
+INFO  : Concurrency mode is disabled, not creating a lock manager
+INFO  : Executing command(queryId=hive_20170302085252_f22b25d3-c24c-4dc8-ac02-c652d898a325): show create table driver
+INFO  : Starting task [Stage-0:DDL] in serial mode
+INFO  : Completed executing command(queryId=hive_20170302085252_f22b25d3-c24c-4dc8-ac02-c652d898a325); Time taken: 0.243 seconds
+INFO  : OK
++-------------------------------------------------------------------------+--+
+|                             createtab_stmt                              |
++-------------------------------------------------------------------------+--+
+| CREATE TABLE `driver`(                                                  |
+|   `driverid` int,                                                       |
+|   `drivername` string,                                                  |
+|   `ssn` bigint,                                                         |
+|   `location` string,                                                    |
+|   `certified` string,                                                   |
+|   `wage_plan` string)                                                   |
+| ROW FORMAT SERDE                                                        |
+|   'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'                  |
+| WITH SERDEPROPERTIES (                                                  |
+|   'field.delim'=',',                                                    |
+|   'serialization.format'=',')                                           |
+| STORED AS INPUTFORMAT                                                   |
+|   'org.apache.hadoop.mapred.TextInputFormat'                            |
+| OUTPUTFORMAT                                                            |
+|   'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'          |
+| LOCATION                                                                |
+|   'hdfs://quickstart.cloudera:8020/user/hive/warehouse/teja.db/driver'  |
+| TBLPROPERTIES (                                                         |
+|   'transient_lastDdlTime'='1488473543')                                 |
++-------------------------------------------------------------------------+--+
+20 rows selected (0.521 seconds)
+
+
+- Any changes that takes place through Hive/Beeline will not reflect on Impala unless or until we refresh the metadata information in impala-shell
+
+[localhost:21000] > invalidate metadata;
+Query: invalidate metadata
+
+Fetched 0 row(s) in 4.58s
+[localhost:21000] > 
+
+- Default hive warehouse directory /user/hive/warehouse/
+
+[cloudera@quickstart ~]$ hdfs dfs -ls /user/hive/warehouse/
+Found 7 items
+drwxrwxrwx   - cloudera supergroup          0 2017-02-25 10:06 /user/hive/warehouse/categories
+drwxrwxrwx   - cloudera supergroup          0 2017-02-25 10:08 /user/hive/warehouse/customers
+drwxrwxrwx   - cloudera supergroup          0 2017-02-25 10:10 /user/hive/warehouse/departments
+drwxrwxrwx   - cloudera supergroup          0 2017-02-25 10:13 /user/hive/warehouse/order_items
+drwxrwxrwx   - cloudera supergroup          0 2017-02-25 10:16 /user/hive/warehouse/orders
+drwxrwxrwx   - cloudera supergroup          0 2017-03-01 07:23 /user/hive/warehouse/prateek.db
+drwxrwxrwx   - cloudera supergroup          0 2017-02-25 10:19 /user/hive/warehouse/products
+
+- Create a table in Hive
+
+Pulled the driver dataset from https://github.com/hortonworks/tutorials/blob/hdp-2.5/driver_data.zip
+
+create table driver (
+driverid int,
+drivername string,
+ssn bigint,
+location string,
+certified string,
+wage_plan string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+create table timesheet (
+driverid int,
+week int,
+hours_logged int,
+miles_logged int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+- Load data into Hive table from local unix
+
+load data local inpath '/home/cloudera/drivers.csv' overwrite into table driver;
+load data local inpath '/home/cloudera/times.csv' overwrite into table timesheet;
+
+- Load data into Hive table from HDFS
+
+load data inpath '/user/cloudera/driver.csv' overwrite into table driver;
+load data inpath '/user/cloudera/times.csv' overwrite into table timesheet;
+
+- Creating an external table in Hive
+
+create external table driver_ext (
+driverid int,
+drivername string,
+ssn bigint,
+location string,
+certified string,
+wage_plan string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/user/cloudera/prateek/';
+
+[cloudera@quickstart ~]$ hdfs dfs -ls /user/hive/warehouse/teja.db/ontimeperf_tgt/year=2008/month=1/
+Found 1 items
+-rwxrwxrwx   1 admin supergroup   13523243 2017-03-04 10:17 /user/hive/warehouse/teja.db/ontimeperf_tgt/year=2008/month=1/000000_0
+
+File is present at this location -- [cloudera@quickstart ~]$ hdfs dfs -put driver.csv /user/cloudera/prateek/
+
+- CREATE QUERY TO FILTER THE DATA (DRIVERID, HOURS_LOGGED, MILES_LOGGED)
+
+SELECT driverId, sum(hours_logged), sum(miles_logged) FROM timesheet GROUP BY driverId;
+
+- CREATE QUERY TO FILTER THE DATA (DRIVERID, HOURS_LOGGED, MILES_LOGGED)
+
+SELECT d.driverId, d.name, t.total_hours, t.total_miles from drivers d  
+JOIN (SELECT driverId, sum(hours_logged)total_hours, sum(miles_logged)total_miles FROM timesheet GROUP BY driverId ) t  
+ON (d.driverId = t.driverId);
+
+- Partitioning in Hive
+
+For Dynamic Partitioning its a 2 way process i.e create first a Non-Partitioned table and load data into it and then create a partition table and load data from 
+a non-partition table to a partition table
+
+For static partitioning, directly load in a partition table 
+
+Pulled the Airline dataset from http://stat-computing.org/dataexpo/2009/
+
+Step-1: Create a Non-Partitioned table
+
+create table onTimePerf_stg
+(Year INT ,
+Month INT ,
+DayofMonth INT ,
+DayOfWeek INT ,
+DepTime INT ,
+CRSDepTime INT ,
+ArrTime INT ,
+CRSArrTime INT ,
+UniqueCarrier STRING ,
+FlightNum INT ,
+TailNum STRING ,
+ActualElapsedTime INT ,
+CRSElapsedTime INT ,
+AirTime STRING ,
+ArrDelay INT ,
+DepDelay INT ,
+Origin STRING ,
+Dest STRING ,
+Distance INT ,
+TaxiIn STRING ,
+TaxiOut STRING ,
+Cancelled INT ,
+CancellationCode STRING ,
+Diverted INT ,
+CarrierDelay STRING ,
+WeatherDelay STRING ,
+NASDelay STRING ,
+SecurityDelay STRING ,
+LateAircraftDelay STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+STORED AS TEXTFILE;
+
+Step-2: Load data in Non-Partitioned table
+
+load data local inpath "/home/cloudera/2008.csv" overwrite into table onTimePerf_stg;
+
+Step-3: Create a Partitioned table
+
+create table onTimePerf_tgt
+(DayofMonth INT ,
+DayOfWeek INT ,
+DepTime INT ,
+CRSDepTime INT ,
+ArrTime INT ,
+CRSArrTime INT ,
+UniqueCarrier STRING ,
+FlightNum INT ,
+TailNum STRING ,
+ActualElapsedTime INT ,
+CRSElapsedTime INT ,
+AirTime STRING ,
+ArrDelay INT ,
+DepDelay INT ,
+Origin STRING ,
+Dest STRING ,
+Distance INT ,
+TaxiIn STRING ,
+TaxiOut STRING ,
+Cancelled INT ,
+CancellationCode STRING ,
+Diverted INT ,
+CarrierDelay STRING ,
+WeatherDelay STRING ,
+NASDelay STRING ,
+SecurityDelay STRING ,
+LateAircraftDelay STRING)
+PARTITIONED BY (
+Year INT, MONTH INT)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+STORED AS PARQUET;
+
+Step-4: Set the properties to load data in a Partitioned table
+
+SET hive.exec.dynamic.partition = true;
+SET hive.exec.dynamic.partition.mode = nonstrict;
+
+Step-5: Load data in a Partitioned table
+
+INSERT OVERWRITE TABLE onTimePerf_tgt PARTITION(Year,Month) 
+SELECT DayofMonth, DayOfWeek, DepTime, CRSDepTime, ArrTime, CRSArrTime, UniqueCarrier, FlightNum, TailNum, ActualElapsedTime, 
+	   CRSElapsedTime, AirTime, ArrDelay, DepDelay, Origin, Dest, Distance, TaxiIn, TaxiOut, Cancelled, CancellationCode, Diverted, 
+	   CarrierDelay, WeatherDelay, NASDelay, SecurityDelay, LateAircraftDelay, Year, Month 
+FROM onTimePerf_stg;
+
+
+- Bucketing in Hive
+
+create table onTimePerf_bucketed
+(DayofMonth INT ,
+DayOfWeek INT ,
+DepTime INT ,
+CRSDepTime INT ,
+ArrTime INT ,
+CRSArrTime INT ,
+UniqueCarrier STRING ,
+FlightNum INT ,
+TailNum STRING ,
+ActualElapsedTime INT ,
+CRSElapsedTime INT ,
+AirTime STRING ,
+ArrDelay INT ,
+DepDelay INT ,
+Origin STRING ,
+Dest STRING ,
+Distance INT ,
+TaxiIn STRING ,
+TaxiOut STRING ,
+Cancelled INT ,
+CancellationCode STRING ,
+Diverted INT ,
+CarrierDelay STRING ,
+WeatherDelay STRING ,
+NASDelay STRING ,
+SecurityDelay STRING ,
+LateAircraftDelay STRING)
+PARTITIONED BY (Year INT, MONTH INT)
+CLUSTERED BY (Origin)
+SORTED BY (DayofMonth)
+INTO 10 BUCKETS
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ',' 
+STORED AS PARQUET;
+
+set hive.enforce.bucketing = true;
+
+INSERT OVERWRITE TABLE onTimePerf_bucketed PARTITION (Year,MONTH)
+SELECT DayofMonth, DayOfWeek, DepTime, CRSDepTime, ArrTime, CRSArrTime, UniqueCarrier, FlightNum, TailNum, ActualElapsedTime, 
+	   CRSElapsedTime, AirTime, ArrDelay, DepDelay, Origin, Dest, Distance, TaxiIn, TaxiOut, Cancelled, CancellationCode, Diverted, 
+	   CarrierDelay, WeatherDelay, NASDelay, SecurityDelay, LateAircraftDelay, Year, Month 
+FROM onTimePerf_stg;
+
+- Table sampling in Hive
+
+SELECT FlightNum, Origin, Dest, AirTime, DepTime  FROM onTimePerf_bucketed
+TABLESAMPLE(BUCKET 9 OUT OF 9 ON Origin);
+
+- Creating views 
+
+CREATE VIEW onTimePerf_view as select * from onTimePerf_tgt;
+
+DROP VIEW onTimePerf_view;
+
+- Creating Index
+
+CREATE INDEX date_index ON TABLE onTimePerf_tgt (DayofMonth) AS 'COMPACT' WITH DEFERRED REBUILD;
+
+- Complex Datatypes in Hive
+
+https://www.cloudera.com/documentation/enterprise/5-5-x/topics/impala_array.html#array
+https://www.cloudera.com/documentation/enterprise/5-5-x/topics/impala_struct.html#struct
+https://www.cloudera.com/documentation/enterprise/5-5-x/topics/impala_map.html
+
+
+ARRAY
+
+arrayfile.txt
+1,abc,40000,a$b$c,hyd
+2,def,3000,d$f,bang
+
+create table array
+(id int,
+name string,
+sal bigint,
+sub array<string>,
+city string)
+row format delimited   
+fields terminated by ','
+collection items terminated by '$';
+
+hive>load data local inpath '/home/cloudera/arrayfile.txt' overwrite into table array;
+
+hive>select sub[2] from array where id=1;
+
+hive>select sub[0] from array;
+
+
+MAP
+
+mapfile.txt
+1,abc,40000,a$b$c,pf#500$epf#200,hyd
+2,def,3000,d$f,pf#500,bang
+
+create table map
+(id int,
+name string,
+sal bigint,
+sub array<string>,
+dud map<string,int>,
+city string)
+row format delimited 
+fields terminated by ','
+collection items terminated by '$'
+map keys terminated by '#';
+
+hive>load data local inpath '/home/cloudera/mapfile.txt' overwrite into table map;
+
+hive>select dud["pf"] from map; 
+
+hive>select dud["pf"],dud["epf"] from map;
+
+
+STRUCT
+
+structfile.txt
+1,abc,40000,a$b$c,pf#500$epf#200,hyd$ap$500001
+2,def,3000,d$f,pf#500,bang$kar$600038
+
+create table struct
+(id int,
+name string,
+sal bigint,
+sub array<string>,
+dud map<string,int>,
+addr struct<city:string,state:string,pin:bigint>)
+row format delimited 
+fields terminated by ','
+collection items terminated by '$'
+map keys terminated by '#';
+
+hive> load data local inpath '/home/cloudera/structfile.txt' into table struct;
+
+hive>select addr.city from struct;

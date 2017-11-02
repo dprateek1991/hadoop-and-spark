@@ -1,0 +1,126 @@
+Real-time-indexing via Cloudera Search and Flume over the sample web server log data and use the Search UI in Hue to explore it
+
+- Create your search index
+
+Already created example present at location 
+
+/opt/examples/flume/solr_configs
+
+or one can create manually by running
+
+[cloudera@quickstart ~]$ solrctl --zk quickstart:2181/solr instancedir --generate solr_configs
+
+It would generate a skeleton configuration and the primary thing that you would ordinarily be customizing is the conf/schema.xml
+
+- Edit the schema
+
+<fields></fields> section needs to be edited, which would define the schema structure for your logs. 
+From this area you can define the fields that are present and searchable in your index.
+
+- Uploading our configuration
+
+[cloudera@quickstart ~]$ cd /opt/examples/flume
+[cloudera@quickstart ~]$ solrctl --zk quickstart:2181/solr instancedir --create live_logs ./solr_configs
+
+- Creating collections
+
+[cloudera@quickstart ~]$ solrctl --zk quickstart:2181/solr collection --create live_logs -s 1
+
+We can verify our collection by going to Hue and check for Solr indexes
+
+Search --> Indexes --> live_logs 
+
+Now that you have verified that your search collection/index was created successfully, we can start putting data into it using Flume and Morphlines. 
+Flume is a tool for ingesting streams of data into your cluster from sources such as log files, network streams, and more. 
+Morphlines is a Java library for doing ETL on-the-fly, and it's an excellent companion to Flume. It allows you to define a chain of tasks like reading records, 
+parsing and formatting individual fields, and deciding where to send them, etc. We've defined a morphline that reads records from Flume, breaks them into the fields 
+we want to search on, and loads them into Solr. 
+
+This example Morphline is defined at /opt/examples/flume/conf/morphline.conf, and we're going to use it to index our records in real-time as they're created and ingested by Flume.
+
+- Start the log generator 
+
+[cloudera@quickstart ~]$ start_logs
+
+- Verify log getting generated
+
+[cloudera@quickstart ~]$ tail_logs
+
+- Stop the log generator 
+
+[cloudera@quickstart ~]$ stop_logs
+
+
+- FLUME and MORPHLINE 
+
+Now that we have an empty Solr index, and live log events coming in to our fake access.log, we can use Flume and morphlines to load the index with the real-time log data.
+Flume is a system for collecting, aggregating, and moving large amounts of log data from many different sources to a centralized data source.
+With a few simple configuration files, we can use Flume and a morphline (a simple way to accomplish on-the-fly ETL,) to load our data into our Solr index.
+You can use Flume to load many other types of data stores.
+
+Start the flume agent by running
+
+Start the Flume agent by executing the following command:
+
+[cloudera@quickstart ~]$ flume-ng agent \
+    --conf /opt/examples/flume/conf \
+    --conf-file /opt/examples/flume/conf/flume.conf \
+    --name agent1 \
+    -Dflume.root.logger=DEBUG,INFO,console
+	
+Go back to HUE and click search from the collections page. We can now browse the events that have been indexed.
+
+
+
+
+
+Example - 
+
+flume.properties
+
+a1.sources = r1 
+a1.sinks = hdfs-Cluster1-sink 
+a1.channels = c1
+
+a1 is my agent name, a1 has got Sources ,Sink and Channel. We could put Sources as r1,r2,r3...etc similarly we could put Sinks as hdfs-Cluster1-sink, hdfs-Cluster2-sink and so on 
+and Channel is c1 mostly the channel is 1,you can also have multiple channels. Sometime we might want to have 1 Channel which is their in memory and there is another Channel c2 
+containing a mirror image of the data on the disc. So if Sink fails to read from c1 it will start reading from c2 and try to get the data.
+
+a1.sources.r1.type = netcat 
+a1.sources.r1.bind = localhost 
+a1.sources.r1.port = 44444
+
+Here r1’s type is netcat (netcat is a very very quick way to create a process that listens on a certain port) and it bind on localhost at port 44444. 
+So here netcat is essentially reading the data by listening to localhost at 44444 port
+
+a1.sinks.hdfs-Cluster1-sink.type = hdfs 
+a1.sinks.hdfs-Cluster1-sink.hdfs.path = hdfs://hadoop1.knowbigdata.com/user/student/sgiri/flume/webdata
+
+Here Sink type is HDFS because we are trying to listen on the localhost at a particular port and whatever data we read from there we are going to push 
+it on to HDFS by specifying the HDFS path (Particular folder in HDFS).
+
+a1.channels.c1.type = memory 
+a1.channels.c1.capacity = 1000 
+a1.channels.c1.transactionCapacity = 100
+
+Here Channel’s type is memory and its capacity is 1000 bytes and transaction capacity is 100. Now we need to tell our Sources that which one is your Channel 
+and to our Sink that which one is your Channel.
+
+a1.sources.r1.channels = c1 
+a1.sinks.hdfs-Cluster1-sink.channel = c1
+
+So Agent needs to know about its Sink,Source and Channel similarly Source needs to know about its Channel & Sink needs to know about its Channel.
+
+Flume command to run 
+
+flume-ng agent \
+--conf conf \
+--conf-file conf/flume.properties \
+--name a1 -Dflume.root.logger=INFO.console
+
+Telnet to test if flume is running
+
+telnet localhost 44444
+
+
+

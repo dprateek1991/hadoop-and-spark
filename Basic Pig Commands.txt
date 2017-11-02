@@ -1,0 +1,311 @@
+- Imp functions in Pig
+
+LOAD
+FOREACH
+GENERATE
+GROUP
+DESCRIBE
+DUMP
+USING
+PIGSTORAGE -- Loads and stores data as structured text files.
+STORE 
+DESCRIBE
+HCatalog
+HCatLoader
+TOKENIZE - The TOKENIZE() function of Pig Latin is used to split a string (which contains a group of words) in a single tuple and returns a bag which contains the output of the split operation.
+
+
+
+- Read a HIVE table using HCatalog in Pig
+
+HCatalog stores schema and location information, so we can use the HCatLoader() function within the Pig script to read data from HCatalog-managed tables.
+
+[cloudera@quickstart ~]$ cat pig_hive_tb_read.pig
+a = LOAD 'prateek.contact' using org.apache.hive.hcatalog.pig.HCatLoader();
+STORE a INTO 'prateek.contact_new' USING org.apache.hive.hcatalog.pig.HCatStorer();
+
+Run as
+pig -useHCatalog -f pig_hive_tb_read.pig
+
+
+
+- Working with structured data
+
+create table drivers
+(driverId int,
+ name string,
+ ssn bigint,
+ location string,
+ certified string,
+ wageplan string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+TBLPROPERTIES("skip.header.line.count"="1");
+
+create table truck_events
+(driverId int,
+truckId int,
+eventTime string,
+eventType string,
+longitude double,
+latitude double,
+eventKey string,
+correlationId bigint,
+driverName string,
+routeId int,
+routeName string)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+TBLPROPERTIES("skip.header.line.count"="1");
+
+Join both datasets using Hive
+
+select a.driverId,a.driverName,a.eventType,b.certified
+from truck_events a join 
+drivers b 
+ON (a.driverId = b.driverId);
+
+
+a = LOAD '<db_name>.drivers' using org.apache.hive.hcatalog.pig.HCatLoader();
+b = LOAD '<db_name>.truck_events' using org.apache.hive.hcatalog.pig.HCatLoader();
+c = join b by driverid LEFT OUTER, a by driverid;
+dump c;
+
+
+
+- Working with various operations of Pig Latin (https://hortonworks.com/hadoop-tutorial/how-to-use-basic-pig-commands/)
+
+truck_events = LOAD '/user/maria_dev/truck_event_text_partition.csv' USING PigStorage(',');
+DESCRIBE truck_events;
+
+truck_events = LOAD '/user/maria_dev/truck_event_text_partition.csv' USING PigStorage(',')
+AS (driverId:int, truckId:int, eventTime:chararray,                 
+eventType:chararray, longitude:double, latitude:double,
+eventKey:chararray, correlationId:long, driverName:chararray,
+routeId:long,routeName:chararray,eventDate:chararray);
+DESCRIBE truck_events;
+
+truck_events_subset = LIMIT truck_events 100;
+DESCRIBE truck_events_subset;
+
+truck_events = LOAD '/user/maria_dev/truck_event_text_partition.csv' USING PigStorage(',')
+AS (driverId:int, truckId:int, eventTime:chararray,                 
+eventType:chararray, longitude:double, latitude:double,
+eventKey:chararray, correlationId:long, driverName:chararray,
+routeId:long,routeName:chararray,eventDate:chararray);  
+truck_events_subset = LIMIT  truck_events 100;
+specific_columns = FOREACH truck_events_subset GENERATE driverId, eventTime, eventType;
+DESCRIBE specific_columns;
+
+STORE specific_columns INTO 'output/specific_columns' USING PigStorage(',');
+
+truck_events = LOAD '/user/maria_dev/truck_event_text_partition.csv' USING PigStorage(',')
+AS (driverId:int, truckId:int, eventTime:chararray,                 
+eventType:chararray, longitude:double, latitude:double,
+eventKey:chararray, correlationId:long, driverName:chararray,
+routeId:long,routeName:chararray,eventDate:chararray);
+drivers =  LOAD '/user/maria_dev/drivers.csv' USING PigStorage(',')
+AS (driverId:int, name:chararray, ssn:chararray,                 
+location:chararray, certified:chararray, wage_plan:chararray);
+join_data = JOIN  truck_events BY (driverId), drivers BY (driverId);
+DESCRIBE join_data;
+
+drivers =  LOAD '/user/maria_dev/drivers.csv' USING PigStorage(',')
+AS (driverId:int, name:chararray, ssn:chararray,                 
+location:chararray, certified:chararray, wage_plan:chararray);
+ordered_data = ORDER drivers BY name asc;
+DUMP ordered_data;
+
+truck_events = LOAD '/user/maria_dev/truck_event_text_partition.csv' USING PigStorage(',')
+AS (driverId:int, truckId:int, eventTime:chararray,                 
+eventType:chararray, longitude:double, latitude:double,
+eventKey:chararray, correlationId:long, driverName:chararray,
+routeId:long,routeName:chararray,eventDate:chararray);
+filtered_events = FILTER truck_events BY NOT (eventType MATCHES 'Normal');
+grouped_events = GROUP filtered_events BY driverId;
+DESCRIBE grouped_events;
+DUMP grouped_events;
+
+
+- Working with semi-structured data
+
+XML File
+
+<Data>
+<employee>
+<id>5</id>
+<name>Aravind</name>
+<gender>M</gender>
+</employee>
+<employee>
+<id>6</id>
+<name>Krishna</name>
+<gender>M</gender>
+</employee>
+<employee>
+<id>7</id>
+<name>Thiru</name>
+<gender>M</gender>
+</employee>
+<employee>
+<id>8</id>
+<name>Mani</name>
+<gender>M</gender>
+</employee>
+</Data>
+
+Piggybank path
+
+[cloudera@quickstart ~]$ ls -ltr /usr/lib/pig/piggybank.jar
+-rw-r--r-- 1 root root 378081 Jun 16  2016 /usr/lib/pig/piggybank.jar
+
+[cloudera@quickstart ~]$ cat pig_semi_struct.pig
+REGISTER /usr/lib/pig/piggybank.jar;
+DEFINE XMLOADER org.apache.pig.piggybank.storage.XMLLOADER();
+
+employee = LOAD '/user/cloudera/employee.xml' using org.apache.pig.piggybank.storage.XMLLoader('employee') as (x:chararray);
+
+s = foreach employee generate x;
+
+DUMP s;
+
+
+XML File  -- Regular Expressions
+
+<Property>
+<name>Ryan</name>
+</Property>
+
+[cloudera@quickstart ~]$ cat pig_semi_struct_1.pig
+REGISTER /usr/lib/pig/piggybank.jar;
+DEFINE XMLOADER org.apache.pig.piggybank.storage.XMLLOADER();
+
+user = load '/user/cloudera/user.xml' USING org.apache.pig.piggybank.storage.XMLLoader('name') as(doc:chararray);
+
+value = foreach user GENERATE FLATTEN(REGEX_EXTRACT_ALL(doc,'<name>(.*)</name>'))  AS name:chararray;
+
+dump value;
+
+
+XML File
+
+<Property>
+ <fname>joseph</fname>
+ <lname>christino</lname>
+ <landmark>peter tower</landmark>
+ <city>panji</city>
+ <state>Goa</state>
+ <contact>89456123</contact>
+ <email>joseph@gmail.com</email>
+ <PAN_Card>0011542</PAN_Card>
+ <URL>blog.joseph.com</URL>
+</Property>
+
+[cloudera@quickstart ~]$ cat pig_semi_struct_2.pig
+REGISTER /usr/lib/pig/piggybank.jar;
+DEFINE XMLOADER org.apache.pig.piggybank.storage.XMLLOADER();
+
+pigdata = load '/user/cloudera/multi_user.xml' USING org.apache.pig.piggybank.storage.XMLLoader('Property') as (doc:chararray);
+
+values = foreach pigdata GENERATE FLATTEN(REGEX_EXTRACT_ALL(doc,'<Property>\\s*<fname>(.*)</fname>\\s*<lname>(.*)</lname>\\s*<landmark>(.*)</landmark>\\s*<city>(.*)</city>\\s*<state>(.*)</state>\\s*<contact>(.*)</contact>\\s*<email>(.*)</email>\\s*<PAN_Card>(.*)</PAN_Card>\\s*<URL>(.*)</URL>\\s*</Property>')) AS (fname:chararray, lname:chararray, landmark:chararray, city:chararray, state:chararray, contact:int, email:chararray, PAN_Card:long, URL:chararray);
+
+dump values;
+
+
+
+- Working with unstructured data (log file)
+
+Example format - 
+64.242.88.10 - - [07/Mar/2014:16:47:12 -0800] "GET /robots.txt HTTP/1.1" 200 68
+
+REGEX - 
+"^(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+.(\\S+\\s+\\S+).\\s+.(\\S+)\\s+(\\S+)\\s+(\\S+.\\S+).\\s+(\\S+)\\s+(\\S+)$"
+
+[cloudera@quickstart ~]$ cat pig_unstruct.pig
+REGISTER /usr/lib/pig/piggybank.jar;
+DEFINE ApacheCommonLogLoader org.apache.pig.piggybank.storage.apachelog.CommonLogLoader();
+
+logs = LOAD '/user/cloudera/common_access_log.log' USING ApacheCommonLogLoader 
+		AS (addr: chararray, logname: chararray, user: chararray, time: chararray, method: chararray, uri: chararray, proto: chararray, status: int, bytes: int);
+addrs = GROUP logs BY addr;
+counts = FOREACH addrs GENERATE flatten($0), COUNT($1) as count;
+DUMP counts;
+
+
+Example format - 
+122.172.200.100 - - [17/Oct/2014:00:04:36 -0400] "GET /tag/hbase-sink/ HTTP/1.1" 200 15997 "https://www.google.co.in/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.117 Safari/537.36"
+
+REGEX - 
+"^(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+.(\\S+\\s+\\S+).\\s+\"(\\S+)\\s+(.+?)\\s+(HTTP[^\"]+)\"\\s+(\\S+)\\s+(\\S+)\\s+\"([^\"]*)\"\\s+\"(.*)\"$"
+
+[cloudera@quickstart ~]$ cat pig_unstruct_1.pig
+REGISTER /usr/lib/pig/piggybank.jar;
+DEFINE ApacheCombinedLogLoader org.apache.pig.piggybank.storage.apachelog.CombinedLogLoader();
+
+logs = LOAD '/user/cloudera/combined_access_log.log' USING org.apache.pig.piggybank.storage.apachelog.CombinedLogLoader()
+            AS (addr: chararray, logname: chararray, user: chararray, time: chararray,
+                method: chararray, uri: chararray, proto: chararray,
+                status: int, bytes: int, referer: chararray, userAgent: chararray);
+
+refers = GROUP logs BY referer;
+refer_counts = FOREACH refers GENERATE flatten($0), COUNT($1) as count;
+sorted_refer_counts = ORDER refer_counts BY count DESC;
+top10_refers = LIMIT sorted_refer_counts 10;
+STORE top10_refers INTO '/out/topreferrers/' USING PigStorage('\t');
+
+
+Viewing the list of IP's from where access is made
+
+[cloudera@quickstart ~]$ cat pig_unstruct_2.pig
+A = load '/user/cloudera/sample_log.log' using PigStorage('-') as (f0,f1,f2,f3,f4);
+B = foreach A generate f0;
+C = distinct B;
+dump C;
+
+Viewing the list of browser agents
+
+[cloudera@quickstart ~]$ cat pig_unstruct_3.pig
+A = load 'c' using PigStorage('"') as (f0,f1,f2,f3,f4,f5);
+B = foreach A generate f5;
+C = distinct B;
+dump C;
+
+Viewing the list of URI Accessed
+
+[cloudera@quickstart ~]$ cat pig_unstruct_4.pig
+A = load '/user/cloudera/sample_log.log' using PigStorage('"') as (f0,f1,f2,f3,f4);
+B = foreach A generate f1;
+C = distinct B;
+dump C;
+
+Viewing the list of access time and source
+
+[cloudera@quickstart ~]$ cat pig_unstruct_5.pig
+A = load '/user/cloudera/sample_log.log' using PigStorage('"') as (f0,f1,f2,f3,f4);
+B = foreach A generate f0;
+C = distinct B;
+dump C;
+
+[cloudera@quickstart ~]$ cut -d '"' -f 1 sample*log
+0:0:0:0:0:0:0:1%0 - - [07/Jul/2011:09:17:35 +0530] 
+127.0.0.1 - - [07/Jul/2011:09:17:35 +0530] 
+
+
+- Working with UDF (User Defined Function) in Pig
+
+[cloudera@quickstart ~]$ cat python_udf.py
+def square(num):
+	return ((num)*(num))
+	
+
+[cloudera@quickstart ~]$ cat python_udf.pig
+REGISTER 'python_udf.py' using jython as myfuncs;
+
+A = load '/user/cloudera/python_udf.txt' using PigStorage (',') as (num:int);
+B = foreach A generate myfuncs.square(num);
+dump B;
+
+
+[cloudera@quickstart ~]$ cat python_udf.txt
+4
